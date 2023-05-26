@@ -31,10 +31,10 @@ def term_hander(signum, frame):
 
 if __name__ == '__main__':
     if(len(sys.argv) < 2):
-        print(f"Usage: {sys.argv[0]} [IP]")
-        exit(1)
-    
-    server_ip = sys.argv[1]
+        server_ip = '172.17.0.2'
+    else:
+        server_ip = sys.argv[1]
+        
     command_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) # UDP
     command_sock.sendto(struct.pack('B', 0x01), (server_ip, command_port))
     signal.signal(signal.SIGINT, int_hander)
