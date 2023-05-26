@@ -6,6 +6,7 @@
 #include <signal.h>
 #include <time.h>
 #include <stdarg.h>
+#include <fcntl.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <sys/epoll.h>
@@ -40,6 +41,7 @@ int tty = 0;
 #define COMMAND_GDB_REGISTER        0x01
 #define COMMAND_GDBSERVER_ATTACH    0x02
 #define COMMAND_STRACE_ATTACH       0x03
+#define COMMAND_GET_ADDRESS         0x04
 
 #define OK_GREEN        "\033[92m"
 #define WARNING_YELLOW  "\033[93m"
@@ -393,6 +395,61 @@ int strace_attach_pid(int pid)
     return 1;
 }
 
+size_t get_address(int pid, char *search)
+{
+    char buf[0x100];
+    char buf2[0x1000];
+    int fd;
+    size_t result = 0;
+    int i;
+    char chr;
+    int eof = 0;
+
+    memset(buf, 0, sizeof(buf));
+    snprintf(buf, sizeof(buf)-1, "/proc/%d/maps", pid);
+    fd = open(buf, O_RDONLY);
+    if(fd != -1)
+    {
+        for(eof = 0; eof != 1;)
+        {
+            memset(buf2, 0, sizeof(buf2));
+            for(i = 0; eof != 1 && i < sizeof(buf2) - 1; i++)
+            {
+                if(read(fd, &chr, sizeof(chr)) != 1)
+                {
+                    eof = 1;
+                }
+
+                buf2[i] = chr;
+
+                if(chr == '\n' || chr == '\0')
+                {
+                    buf2[i] = '\0';
+                    break;
+                }
+            }
+
+            if(strstr(buf2, search))
+            {
+                for(i = 0; i < sizeof(buf2) && buf2[i] && buf2[i] != '-'; i++)
+                {
+                    if(buf2[i] >= '0' && buf2[i] <= '9')
+                    {
+                        result = (result << 4) + (buf2[i] - '0');
+                    }
+                    else if(buf2[i] >= 'a' && buf2[i] <= 'f')
+                    {
+                        result = (result << 4) + (buf2[i] - 'a' + 10);
+                    }
+                }
+                break;
+            }
+        }
+        close(fd);
+    }
+    return result;
+}
+
 int command_handler()
 {
     char buf[0x100];
@@ -400,6 +457,7 @@ int command_handler()
     struct sockaddr_in client_addr;
     int recv_len;
     unsigned char command, path_len;
+    size_t addr = 0;
 
     client_addr_size = sizeof(client_addr);
     memset(buf, 0, sizeof(buf));
@@ -454,6 +512,27 @@ int command_handler()
 
         client_addr_size = sizeof(client_addr);
         if (sendto(command_sock, buf, recv_len, 0, (struct sockaddr *)&client_addr, client_addr_size) == -1) {
+            pre_perror("sendto");
+            exit(EXIT_FAILURE);
+        }
+        break;
+    case COMMAND_GET_ADDRESS:
+        addr = 0;
+        if(ser_pid != -1)
+        {
+            addr = get_address(ser_pid, buf + 2);
+        }
+        else if(existed_pid != -1)
+        {
+            addr = get_address(existed_pid, buf + 2);
+        }
+
+        memset(buf, 0, sizeof(buf));
+        buf[0] = COMMAND_GET_ADDRESS;
+        buf[1] = sizeof(addr);
+        *(size_t*)&buf[2] = addr;
+        client_addr_size = sizeof(client_addr);
+        if (sendto(command_sock, buf, 2 + sizeof(addr), 0, (struct sockaddr *)&client_addr, client_addr_size) == -1) {
             pre_perror("sendto");
             exit(EXIT_FAILURE);
         }
