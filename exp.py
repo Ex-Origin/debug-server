@@ -6,11 +6,21 @@ context.clear(arch='amd64', os='linux', log_level='debug')
 
 attach_host = '172.17.0.2'
 attach_port = 9545
-def attach():
+def attach(script=''):
     tmp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-    gdbinit = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'gdbscript.sh').encode()
+    gdb_script = '''
+define pr
+    x/16gx $rebase(0x0)
+end
+
+b *$rebase(0x0)
+    ''' + '\n' + script
+    gdbinit = '/tmp/gdb_script_' + attach_host
+    script_f = open(gdbinit, 'w')
+    script_f.write(gdb_script)
+    script_f.close()
     if attach_host == '': raise ValueError("Please must configure attach_host")
-    tmp_sock.sendto(struct.pack('BB', 0x02, len(gdbinit)) + gdbinit, (attach_host, attach_port))
+    tmp_sock.sendto(struct.pack('BB', 0x02, len(gdb_script)) + gdb_script, (attach_host, attach_port))
     tmp_sock.recvfrom(4096)
     tmp_sock.close()
 def strace():
