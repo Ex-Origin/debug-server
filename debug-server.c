@@ -469,6 +469,12 @@ int command_handler()
     case COMMAND_GDB_REGISTER:
         memcpy(&gdb_client_addr, &client_addr, sizeof(gdb_client_addr));
         info_printf("%s gdb client registered.\n", inet_ntoa(client_addr.sin_addr));
+
+        client_addr_size = sizeof(client_addr);
+        if (sendto(command_sock, buf, recv_len, 0, (struct sockaddr *)&client_addr, client_addr_size) == -1) {
+            pre_perror("sendto");
+            exit(EXIT_FAILURE);
+        }
         break;
     case COMMAND_GDBSERVER_ATTACH:
         if(gdb_client_addr.sin_addr.s_addr)

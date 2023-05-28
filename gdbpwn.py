@@ -6,6 +6,7 @@ import socket
 import struct
 import signal
 import time
+import logging
 
 command_port = 9545
 gdb_port = 9549
@@ -34,9 +35,14 @@ if __name__ == '__main__':
         server_ip = '172.17.0.2'
     else:
         server_ip = sys.argv[1]
+
+    logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
         
     command_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) # UDP
+    logging.info(f'Connecting to {server_ip}:{command_port}')
     command_sock.sendto(struct.pack('B', 0x01), (server_ip, command_port))
+    data, address = command_sock.recvfrom(4096)
+    logging.info(f'It has connected successfully')
     signal.signal(signal.SIGINT, int_hander)
     signal.signal(signal.SIGTERM, term_hander)
     while(True):

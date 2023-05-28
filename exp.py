@@ -23,12 +23,14 @@ b *$rebase(0x0)
     tmp_sock.sendto(struct.pack('BB', 0x02, len(gdb_script)) + gdb_script, (attach_host, attach_port))
     tmp_sock.recvfrom(4096)
     tmp_sock.close()
+    print('attach successfully')
 def strace():
     tmp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) # UDP
     if attach_host == '': raise ValueError("Please must configure attach_host")
     tmp_sock.sendto(struct.pack('B', 0x03), (attach_host, attach_port))
     tmp_sock.recvfrom(4096)
     tmp_sock.close()
+    print('strace successfully')
 def address(search:str)->int:
     tmp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
     if attach_host == '': raise ValueError("Please must configure attach_host")
