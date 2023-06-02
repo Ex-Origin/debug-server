@@ -704,6 +704,14 @@ int main(int argc, char **args)
     {
         existed_pid = atoi(args[1]);
     }
+    else
+    {
+        if(access(service_args[0], X_OK) == -1)
+        {
+            fprintf(stderr, "'%s' is not executable!\n", service_args[0]);
+            exit(EXIT_FAILURE);
+        }
+    }
 
     tty = isatty(STDOUT_FILENO);
 
