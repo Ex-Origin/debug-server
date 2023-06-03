@@ -1,4 +1,5 @@
 // gcc -static -g debug-server.c -o debug-server
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -224,7 +225,7 @@ int init_service()
         exit(1);
     }
 
-    listen(service_sock, 256);
+    listen(service_sock, 64);
 
     return 0;
 }
