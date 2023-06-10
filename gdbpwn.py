@@ -60,7 +60,7 @@ if __name__ == '__main__':
             if(gdb_pid != -1):
                 print(f"KILL the existed gdb process, pid={gdb_pid}")
                 os.kill(gdb_pid, signal.SIGTERM)
-                os.waitpid(gdb_pid, os.WNOHANG)
+                os.waitpid(gdb_pid, 0)
                 gdb_pid = -1
             
             gdb_pid = os.fork()
@@ -73,7 +73,7 @@ if __name__ == '__main__':
             if(gdb_pid != -1):
                 print(f"KILL the existed gdb process, pid={gdb_pid}")
                 os.kill(gdb_pid, signal.SIGTERM)
-                os.waitpid(gdb_pid, os.WNOHANG)
+                os.waitpid(gdb_pid, 0)
                 gdb_pid = -1
             break
     logging.info(f'End gdb client')
