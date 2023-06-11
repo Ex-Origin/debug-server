@@ -31,3 +31,4 @@ apt install -y gdbserver strace
 
 * Cross-platform
 * More automatic
+* Streamline the debugging process for reverse engineering (Feature: HALT_AT_ENTRY_POINT)

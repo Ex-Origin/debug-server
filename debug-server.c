@@ -14,10 +14,12 @@
 #include <sys/wait.h>
 #include <sys/signalfd.h>
 #include <sys/prctl.h>
+#include <sys/ptrace.h>
 
 char *service_args[]    = {"/bin/sh", NULL};
 char *gdbserver_args[]  = {"/usr/bin/gdbserver", "--attach", /* Reserved parameter */ NULL, NULL, NULL};
 char *strace_args[]     = {"/usr/bin/strace", "-f", "-p", /* Reserved parameter */ NULL, NULL};
+// #define HALT_AT_ENTRY_POINT
 
 #define SERVICE_PORT    9541
 #define COMMAND_PORT    9545
@@ -378,6 +380,10 @@ int gdb_attach_pid(int pid)
         gdb_output(buf);
     }
 
+#ifdef HALT_AT_ENTRY_POINT
+    CHECK(kill(pid, SIGCONT) != -1);
+#endif
+
     return 1;
 }
 
@@ -423,6 +429,10 @@ int strace_attach_pid(int pid)
     memset(buf, 0, sizeof(buf));
     read(strace_pipe[0], buf, sizeof(buf)-1);
     strace_output(buf);
+
+#ifdef HALT_AT_ENTRY_POINT
+    CHECK(kill(pid, SIGCONT) != -1);
+#endif
 
     return 1;
 }
@@ -596,6 +606,50 @@ int command_handler()
     return 1;
 }
 
+#ifdef HALT_AT_ENTRY_POINT
+int ptrace_for_stopping_at_entry_point(pid_t pid)
+{
+    struct signalfd_siginfo fdsi;
+    int result;
+    int wstatus;
+
+    CHECK(ptrace(PTRACE_ATTACH, pid, NULL, 0, 0, 0) != -1);
+
+    CHECK((result = read(sfd, &fdsi, sizeof(struct signalfd_siginfo))) != -1);
+    CHECK(fdsi.ssi_signo == SIGCHLD);
+    CHECK(fdsi.ssi_pid == pid);
+    CHECK(waitpid(pid, &wstatus, WNOHANG) == pid);
+    CHECK((wstatus >> 16) == 0);
+    debug_printf("Tracee(%d) is ready.\n", pid);
+
+    CHECK(ptrace(PTRACE_SETOPTIONS, pid, NULL, PTRACE_O_TRACEEXEC, 0, 0) != -1);
+    CHECK(ptrace(PTRACE_CONT, pid, NULL, 0, 0, 0) != -1);
+    CHECK((result = read(sfd, &fdsi, sizeof(struct signalfd_siginfo))) != -1);
+    CHECK(fdsi.ssi_signo == SIGCHLD);
+    CHECK(fdsi.ssi_pid == pid);
+    CHECK(waitpid(pid, &wstatus, WNOHANG) == pid);
+    CHECK((wstatus >> 16) == 0);
+    debug_printf("Continue %d.\n", pid);
+
+    CHECK(ptrace(PTRACE_CONT, pid, NULL, 0, 0, 0) != -1);
+    CHECK((result = read(sfd, &fdsi, sizeof(struct signalfd_siginfo))) != -1);
+    CHECK(fdsi.ssi_signo == SIGCHLD);
+    CHECK(fdsi.ssi_pid == pid);
+    CHECK(waitpid(pid, &wstatus, WNOHANG) == pid);
+    CHECK((wstatus >> 16) == PTRACE_EVENT_EXEC);
+    debug_printf("Receive a PTRACE_EVENT_EXEC event from %d.\n", pid);
+
+    CHECK(kill(pid, SIGSTOP) != -1);
+    CHECK(ptrace(PTRACE_DETACH, pid, NULL, 0, 0, 0) != -1);
+    CHECK((result = read(sfd, &fdsi, sizeof(struct signalfd_siginfo))) != -1);
+    CHECK(fdsi.ssi_signo == SIGCHLD);
+    CHECK(fdsi.ssi_pid == pid);
+    CHECK(waitpid(pid, &wstatus, WNOHANG) == 0);
+
+    return 0;
+}
+#endif
+
 int service_handler()
 {
     int client_sock = -1;
@@ -643,6 +697,10 @@ int service_handler()
 
         CHECK(setsid() != -1);
 
+#ifdef HALT_AT_ENTRY_POINT
+        CHECK(kill(0, SIGSTOP) != -1);
+#endif
+
         dup2(STDIN_FILENO, STDOUT_FILENO);
         dup2(STDIN_FILENO, STDERR_FILENO);
         
@@ -651,6 +709,10 @@ int service_handler()
     }
     else
     {
+#ifdef HALT_AT_ENTRY_POINT
+        ptrace_for_stopping_at_entry_point(ser_pid);
+#endif
+
         info_printf("Service %d start\n", ser_pid);
     }
 
