@@ -15,6 +15,7 @@
 #include <sys/signalfd.h>
 #include <sys/prctl.h>
 #include <sys/ptrace.h>
+#include <sys/personality.h>
 
 char *service_args[]    = {"/bin/sh", NULL};
 char *gdbserver_args[]  = {"/usr/bin/gdbserver", "--attach", /* Reserved parameter */ NULL, NULL, NULL};
@@ -698,6 +699,7 @@ int service_handler()
         CHECK(setsid() != -1);
 
 #ifdef HALT_AT_ENTRY_POINT
+        CHECK(personality(ADDR_NO_RANDOMIZE) != -1);
         CHECK(kill(0, SIGSTOP) != -1);
 #endif
 
