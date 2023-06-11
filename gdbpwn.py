@@ -42,7 +42,7 @@ if __name__ == '__main__':
 
     logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
         
-    command_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) # UDP
+    command_sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM, socket.IPPROTO_UDP) # UDP
     logging.info(f'Connecting to {server_ip}:{command_port}')
     command_sock.sendto(struct.pack('B', COMMAND_GDB_REGISTER), (server_ip, command_port))
     data, address = command_sock.recvfrom(4096)
