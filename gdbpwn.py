@@ -36,14 +36,21 @@ def term_hander(signum, frame):
 
 if __name__ == '__main__':
     if(len(sys.argv) < 2):
-        server_ip = '172.17.0.2'
+        server_ip = os.getenv('TARGET_SERVER_IP')
+        if not server_ip:
+            print(f'Usage: {sys.argv[0]} [IP]', file=sys.stderr)
+            exit(1)
     else:
         server_ip = sys.argv[1]
 
     logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
         
     command_sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM, socket.IPPROTO_UDP) # UDP
-    logging.info(f'Connecting to {server_ip}:{command_port}')
+    if server_ip.find(':') == -1:
+        logging.info(f'Connecting to {server_ip}:{command_port}')
+        server_ip = '::ffff:' + server_ip
+    else:
+        logging.info(f'Connecting to [{server_ip}]:{command_port}')
     command_sock.sendto(struct.pack('B', COMMAND_GDB_REGISTER), (server_ip, command_port))
     data, address = command_sock.recvfrom(4096)
     logging.info(f'It has connected successfully')
