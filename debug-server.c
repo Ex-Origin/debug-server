@@ -641,6 +641,8 @@ int ptrace_for_stopping_at_entry_point(pid_t pid)
     CHECK(fdsi.ssi_signo == SIGCHLD);
     CHECK(fdsi.ssi_pid == pid);
     CHECK(waitpid(pid, &wstatus, WNOHANG) == pid);
+    CHECK(WIFSTOPPED(wstatus));
+    CHECK(WSTOPSIG(wstatus) == SIGTRAP);
     CHECK((wstatus >> 16) == PTRACE_EVENT_EXEC);
     debug_printf("Receive a PTRACE_EVENT_EXEC event from %d.\n", pid);
 
