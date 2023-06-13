@@ -771,7 +771,7 @@ int child_signal_handler()
 
     while(1)
     {
-        pid = waitpid(0, &status, WNOHANG);
+        pid = waitpid(-1, &status, WNOHANG);
         if(pid == 0 || pid == -1)
         {
             break;
