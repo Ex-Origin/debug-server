@@ -371,6 +371,8 @@ int gdb_attach_pid(int pid)
         exit(EXIT_FAILURE);
     }
 
+    info_printf("Gdbserver start, pid=%d\n", gdb_pid);
+
     // Wait for gdbserver
     run = 1;
     while(run)
@@ -426,6 +428,8 @@ int strace_attach_pid(int pid)
 
         exit(EXIT_FAILURE);
     }
+
+    info_printf("Strace start, pid=%d\n", strace_pid);
 
     memset(buf, 0, sizeof(buf));
     read(strace_pipe[0], buf, sizeof(buf)-1);
@@ -715,7 +719,7 @@ int service_handler()
         ptrace_for_stopping_at_entry_point(ser_pid);
 #endif
 
-        info_printf("Service %d start\n", ser_pid);
+        info_printf("Service start, pid=%d\n", ser_pid);
     }
 
     if(client_sock != -1)
@@ -767,7 +771,7 @@ int child_signal_handler()
     int pid = 0, status = 0;
     int i, is_con = 0, index;
     time_t spend;
-    int is_end = 0;
+    char signal_buf[0x100];
 
     while(1)
     {
@@ -779,19 +783,66 @@ int child_signal_handler()
 
         if (WIFEXITED(status))
         {
-            is_end = 1;
-            info_printf("Pid %d exited, status=%d\n", pid, WEXITSTATUS(status));
-        }
-        else if (WIFSIGNALED(status))
-        {
-            is_end = 1;
-            if(WTERMSIG(status) < sizeof(sig_name)/sizeof(char*))
+            if (pid == ser_pid)
             {
-                info_printf("Pid %d killed by signal %s\n", pid, sig_name[WTERMSIG(status)]);
+                info_printf("Service exited, pid=%d, status=%d\n", pid, WEXITSTATUS(status));
+                ser_pid = -1;
+            }
+            else if (pid == gdb_pid)
+            {
+                info_printf("Gdbserver exited, pid=%d, status=%d\n", pid, WEXITSTATUS(status));
+                gdb_pid = -1;
+            }
+            else if (pid == strace_pid)
+            {
+                info_printf("Strace exited, pid=%d, status=%d\n", pid, WEXITSTATUS(status));
+                strace_pid  = -1;
+            }
+            else if (pid == existed_pid)
+            {
+                info_printf("Target process exited, pid=%d, status=%d\n", pid, WEXITSTATUS(status));
+                existed_pid = -1;
             }
             else
             {
-                info_printf("Pid %d killed by signal %d\n", pid, WTERMSIG(status));
+                info_printf("Unknown child process exited, pid=%d, status=%d\n", pid, WEXITSTATUS(status));
+            }
+        }
+        else if (WIFSIGNALED(status))
+        {
+            memset(signal_buf, 0, sizeof(signal_buf));
+            if(WTERMSIG(status) < sizeof(sig_name)/sizeof(char*))
+            {
+                strncpy(signal_buf, sig_name[WTERMSIG(status)], sizeof(signal_buf)-1);
+            }
+            else
+            {
+                snprintf(signal_buf, sizeof(signal_buf)-1, "%d", WTERMSIG(status));
+            }
+
+            if (pid == ser_pid)
+            {
+                info_printf("Service killed, pid=%d, signal=%s\n", pid, signal_buf);
+                ser_pid = -1;
+            }
+            else if (pid == gdb_pid)
+            {
+                info_printf("Gdbserver killed, pid=%d, signal=%s\n", pid, signal_buf);
+                gdb_pid = -1;
+            }
+            else if (pid == strace_pid)
+            {
+                info_printf("Strace killed, pid=%d, signal=%s\n", pid, signal_buf);
+                strace_pid  = -1;
+            }
+            else if (pid == existed_pid)
+            {
+                info_printf("Target process killed, pid=%d, signal=%s\n", pid, signal_buf);
+                existed_pid = -1;
+            }
+            else
+            {
+                info_printf("Unknown child process killed, pid=%d, signal=%s\n", pid, signal_buf);
             }
         }
         else if (WIFSTOPPED(status))
@@ -808,14 +859,6 @@ int child_signal_handler()
         else if (WIFCONTINUED(status))
         {
             info_printf("Pid %d continued\n", pid);
-        }
-
-        if(is_end == 1)
-        {
-            if      (pid == ser_pid)        ser_pid     = -1;
-            else if (pid == gdb_pid)        gdb_pid     = -1;
-            else if (pid == strace_pid)     strace_pid  = -1;
-            else if (pid == existed_pid)    existed_pid = -1;
         }
     }
 
@@ -953,7 +996,7 @@ int main(int argc, char **args)
     monitor_fd(gdb_pipe[0]);
     monitor_fd(strace_pipe[0]);
 
-    info_printf("Start service\n");
+    info_printf("Start debugging service, pid=%d\n", getpid());
     run = 1;
     while(run)
     {
@@ -985,7 +1028,7 @@ int main(int argc, char **args)
 
     disconnect_gdb();
 
-    info_printf("Exit service\n");
+    info_printf("Exit debugging service, pid=%d\n", getpid());
 
     return 0;
 }
