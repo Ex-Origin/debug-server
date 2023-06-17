@@ -338,8 +338,8 @@ int gdb_attach_pid(int pid)
     memset(arg2, 0, sizeof(arg2));
     snprintf(arg1, sizeof(arg1)-1, "*:%d", GDB_PORT);
     snprintf(arg2, sizeof(arg2)-1, "%d", pid);
-    gdbserver_args[sizeof(strace_args)/sizeof(strace_args[0])-3] = arg1;
-    gdbserver_args[sizeof(strace_args)/sizeof(strace_args[0])-2] = arg2;
+    gdbserver_args[sizeof(gdbserver_args)/sizeof(gdbserver_args[0])-3] = arg1;
+    gdbserver_args[sizeof(gdbserver_args)/sizeof(gdbserver_args[0])-2] = arg2;
 
     if(gdb_pid != -1)
     {
