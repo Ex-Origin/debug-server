@@ -8,7 +8,7 @@ attach_host = os.getenv('TARGET_SERVER_IP')
 attach_port = 9545
 def attach(script=''):
     tmp_sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-    gdb_script = '''
+    gdb_script = f'''
 define pr
     x/16gx $rebase(0x0)
 end
