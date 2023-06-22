@@ -1,4 +1,7 @@
-// gcc -static -g debug-server.c -o debug-server
+/**
+ * Compile:     gcc -static -g debug-server.c -o debug-server
+ * Repository:  https://github.com/Ex-Origin/debug-server
+*/
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,6 +28,8 @@ char *strace_args[]     = {"/usr/bin/strace", "-f", "-p", /* Reserved parameter 
 #define SERVICE_PORT    9541
 #define COMMAND_PORT    9545
 #define GDB_PORT        9549
+
+#define VERSION         "1.0.0"
 
 int ser_pid         = -1; // Service PID
 int gdb_pid         = -1; // gdbserver PID
@@ -998,7 +1003,7 @@ int main(int argc, char **args)
     monitor_fd(gdb_pipe[0]);
     monitor_fd(strace_pipe[0]);
 
-    info_printf("Start debugging service, pid=%d\n", getpid());
+    info_printf("Start debugging service, pid=%d, version=%s\n", getpid(), VERSION);
     run = 1;
     while(run)
     {
