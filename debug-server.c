@@ -29,7 +29,7 @@ char *strace_args[]     = {"/usr/bin/strace", "-f", "-p", /* Reserved parameter 
 #define COMMAND_PORT    9545
 #define GDB_PORT        9549
 
-#define VERSION         "1.0.0"
+#define VERSION         "1.0.1"
 
 int ser_pid         = -1; // Service PID
 int gdb_pid         = -1; // gdbserver PID
@@ -267,7 +267,7 @@ int init_socket()
     return 0;
 }
 
-int set_sig_hander()
+int set_sig_handler()
 {
     sigset_t new_mask;
 
@@ -914,7 +914,7 @@ int signal_handler()
     return ret_val;
 }
 
-int gdb_pipe_hander()
+int gdb_pipe_handler()
 {
     char buf[0x100];
     memset(buf, 0, sizeof(buf));
@@ -923,7 +923,7 @@ int gdb_pipe_hander()
     return 1;
 }
 
-int strace_pipe_hander()
+int strace_pipe_handler()
 {
     char buf[0x100];
     memset(buf, 0, sizeof(buf));
@@ -992,7 +992,7 @@ int main(int argc, char **args)
 
     init_socket();
 
-    set_sig_hander();
+    set_sig_handler();
 
     monitor_fd(command_sock);
     if(existed_pid == -1)
@@ -1024,11 +1024,11 @@ int main(int argc, char **args)
             }
             else if(events[i].data.fd == gdb_pipe[0])
             {
-                run = gdb_pipe_hander();
+                run = gdb_pipe_handler();
             }
             else if(events[i].data.fd == strace_pipe[0])
             {
-                run = strace_pipe_hander();
+                run = strace_pipe_handler();
             }
         }
     }

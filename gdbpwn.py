@@ -17,7 +17,7 @@ COMMAND_GDBSERVER_ATTACH  = 0x02
 COMMAND_GDB_LOGOUT        = 0x05
 
 last_int = 0
-def int_hander(signum, frame):
+def int_handler(signum, frame):
     global last_int
     tmp = time.time()
     if(tmp - last_int < 0.2):
@@ -28,7 +28,7 @@ def int_hander(signum, frame):
     else:
         last_int = tmp
 
-def term_hander(signum, frame):
+def term_handler(signum, frame):
     if(gdb_pid != -1):
         os.kill(gdb_pid, signal.SIGTERM)
         os.waitpid(gdb_pid, os.WNOHANG)
@@ -54,8 +54,8 @@ if __name__ == '__main__':
     command_sock.sendto(struct.pack('B', COMMAND_GDB_REGISTER), (server_ip, command_port))
     data, address = command_sock.recvfrom(4096)
     logging.info(f'It has connected successfully')
-    signal.signal(signal.SIGINT, int_hander)
-    signal.signal(signal.SIGTERM, term_hander)
+    signal.signal(signal.SIGINT, int_handler)
+    signal.signal(signal.SIGTERM, term_handler)
     logging.info(f'Start gdb client')
     while(True):
         data, address = command_sock.recvfrom(4096)
