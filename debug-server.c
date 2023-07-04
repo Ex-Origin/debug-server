@@ -29,7 +29,7 @@ char *strace_args[]     = {"/usr/bin/strace", "-f", "-p", /* Reserved parameter 
 #define COMMAND_PORT    9545
 #define GDB_PORT        9549
 
-#define VERSION         "1.0.1"
+#define VERSION         "1.1.0"
 
 int ser_pid         = -1; // Service PID
 int gdb_pid         = -1; // gdbserver PID
@@ -41,7 +41,7 @@ int sfd             = -1;
 int epollfd         = -1;
 
 struct sockaddr_in6 gdb_client_addr = {0};
-int existed_pid = -1;
+char *popen_arg = NULL;
 sigset_t old_mask;
 int gdb_pipe[2] = {-1, -1};
 int strace_pipe[2] = {-1, -1};
@@ -243,7 +243,7 @@ int init_socket()
     // Bind the socket to the server address
     CHECK(bind(command_sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) != -1);
 
-    if(existed_pid == -1)
+    if(popen_arg == NULL)
     {
         // Service socket
         CHECK((service_sock = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP)) != -1);
@@ -512,6 +512,9 @@ int command_handler()
     size_t addr = 0;
     char clientIP[INET6_ADDRSTRLEN], ip_buf[0x100];
     int clientPort;
+    int pid;
+    FILE *popen_fp = NULL;
+    char popen_result[0x100];
 
     client_addr_size = sizeof(client_addr);
     memset(buf, 0, sizeof(buf));
@@ -551,9 +554,17 @@ int command_handler()
             {
                 gdb_attach_pid(ser_pid);
             }
-            else if(existed_pid != -1)
+            else if(popen_arg != NULL)
             {
-                gdb_attach_pid(existed_pid);
+                CHECK((popen_fp = popen(popen_arg, "r")) != NULL);
+                
+                memset(popen_result, 0, sizeof(popen_result));
+                CHECK(fread(popen_result, sizeof(popen_result[0]), sizeof(popen_result)-1, popen_fp) >= 0);
+                
+                CHECK(pclose(popen_fp) != -1);
+
+                pid = atoi(popen_result);
+                gdb_attach_pid(pid);
             }
             client_addr_size = sizeof(gdb_client_addr);
             // Send the received data back to the two client
@@ -575,9 +586,17 @@ int command_handler()
             strace_attach_pid(ser_pid);
             
         }
-        else if(existed_pid != -1)
+        else if(popen_arg != NULL)
         {
-            strace_attach_pid(existed_pid);
+            CHECK((popen_fp = popen(popen_arg, "r")) != NULL);
+            
+            memset(popen_result, 0, sizeof(popen_result));
+            CHECK(fread(popen_result, sizeof(popen_result[0]), sizeof(popen_result)-1, popen_fp) >= 0);
+            
+            CHECK(pclose(popen_fp) != -1);
+
+            pid = atoi(popen_result);
+            strace_attach_pid(pid);
         }
 
         client_addr_size = sizeof(client_addr);
@@ -591,9 +610,17 @@ int command_handler()
         {
             addr = get_address(ser_pid, buf + 2);
         }
-        else if(existed_pid != -1)
+        else if(popen_arg != NULL)
         {
-            addr = get_address(existed_pid, buf + 2);
+            CHECK((popen_fp = popen(popen_arg, "r")) != NULL);
+            
+            memset(popen_result, 0, sizeof(popen_result));
+            CHECK(fread(popen_result, sizeof(popen_result[0]), sizeof(popen_result)-1, popen_fp) >= 0);
+            
+            CHECK(pclose(popen_fp) != -1);
+
+            pid = atoi(popen_result);
+            addr = get_address(pid, buf + 2);
         }
 
         memset(buf, 0, sizeof(buf));
@@ -805,11 +832,6 @@ int child_signal_handler()
                 info_printf("Strace exited, pid=%d, status=%d\n", pid, WEXITSTATUS(status));
                 strace_pid  = -1;
             }
-            else if (pid == existed_pid)
-            {
-                info_printf("Target process exited, pid=%d, status=%d\n", pid, WEXITSTATUS(status));
-                existed_pid = -1;
-            }
             else
             {
                 info_printf("Unknown child process exited, pid=%d, status=%d\n", pid, WEXITSTATUS(status));
@@ -841,11 +863,6 @@ int child_signal_handler()
             {
                 info_printf("Strace killed, pid=%d, signal=%s\n", pid, signal_buf);
                 strace_pid  = -1;
-            }
-            else if (pid == existed_pid)
-            {
-                info_printf("Target process killed, pid=%d, signal=%s\n", pid, signal_buf);
-                existed_pid = -1;
             }
             else
             {
@@ -973,7 +990,7 @@ int main(int argc, char **args)
 
     if(argc > 1)
     {
-        existed_pid = atoi(args[1]);
+        popen_arg = args[1];
     }
     else
     {
@@ -995,7 +1012,7 @@ int main(int argc, char **args)
     set_sig_handler();
 
     monitor_fd(command_sock);
-    if(existed_pid == -1)
+    if(popen_arg == NULL)
     {
         monitor_fd(service_sock);
     }
@@ -1014,7 +1031,7 @@ int main(int argc, char **args)
             {
                 run = command_handler();
             }
-            else if(existed_pid == -1 && events[i].data.fd == service_sock)
+            else if(popen_arg == NULL && events[i].data.fd == service_sock)
             {
                 run = service_handler();
             }
