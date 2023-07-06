@@ -29,7 +29,7 @@ char *strace_args[]     = {"/usr/bin/strace", "-f", "-p", /* Reserved parameter 
 #define COMMAND_PORT    9545
 #define GDB_PORT        9549
 
-#define VERSION         "1.1.0"
+#define VERSION         "1.1.1"
 
 int ser_pid         = -1; // Service PID
 int gdb_pid         = -1; // gdbserver PID
@@ -341,7 +341,7 @@ int gdb_attach_pid(int pid)
     
     memset(arg1, 0, sizeof(arg1));
     memset(arg2, 0, sizeof(arg2));
-    snprintf(arg1, sizeof(arg1)-1, "*:%d", GDB_PORT);
+    snprintf(arg1, sizeof(arg1)-1, ":::%d", GDB_PORT);
     snprintf(arg2, sizeof(arg2)-1, "%d", pid);
     gdbserver_args[sizeof(gdbserver_args)/sizeof(gdbserver_args[0])-3] = arg1;
     gdbserver_args[sizeof(gdbserver_args)/sizeof(gdbserver_args[0])-2] = arg2;
