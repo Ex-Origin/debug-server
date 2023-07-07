@@ -9,6 +9,6 @@ if __name__ == '__main__':
         shutil.copy(os.path.join(os.path.dirname(os.path.abspath(os.readlink(__file__))), 'exp.py'), './exp.py')
         os.chmod('./exp.py', 0o755)
 
-    if(os.access('./debug-server.c', os.F_OK) == 0):
-        shutil.copy(os.path.join(os.path.dirname(os.path.abspath(os.readlink(__file__))), 'debug-server.c'), './debug-server.c')
-        os.chmod('./debug-server.c', 0o644)
+    if(os.access('./debug-server', os.F_OK) == 0):
+        shutil.copy(os.path.join(os.path.dirname(os.path.abspath(os.readlink(__file__))), 'release/debug-server.x86_64'), './debug-server')
+        os.chmod('./debug-server', 0o755)

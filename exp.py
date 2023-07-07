@@ -41,6 +41,14 @@ def address(search:str)->int:
     tmp_recv = tmp_sock.recvfrom(4096)[0]
     tmp_sock.close()
     return struct.unpack('Q', tmp_recv[2:10])[0]
+def run_service():
+    tmp_sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM, socket.IPPROTO_UDP) # UDP
+    _attach_host = attach_host
+    if attach_host.find(':') == -1: _attach_host = '::ffff:' + attach_host
+    tmp_sock.sendto(struct.pack('B', 0x06), (_attach_host, attach_port))
+    tmp_sock.recvfrom(4096)
+    tmp_sock.close()
+    print('run_service successfully')
 
 sh = remote(attach_host, 9541)
 attach()
