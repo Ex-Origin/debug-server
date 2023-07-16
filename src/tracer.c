@@ -6,13 +6,7 @@
 #include <unistd.h>
 #include <sys/prctl.h>
 #include <sys/wait.h>
-#include "tracer.h"
-#include "config.h"
-#include "pid.h"
-#include "fd.h"
-#include "log.h"
-#include "arg.h"
-#include "execve-tools.h"
+#include "debug-server.h"
 
 char *gdbserver_args[]  = {"gdbserver", "--attach", /* Reserved parameter */ NULL, NULL, NULL};
 char *strace_args[]     = {"strace", "-f", "-p", /* Reserved parameter */ NULL, NULL};
@@ -72,9 +66,10 @@ int gdbserver_attach_pid(int pid)
         gdbserver_output(buf);
     }
 
-    if(arg_opt_s)
+    if(arg_opt_s && stopped)
     {
         CHECK(kill(pid, SIGCONT) != -1);
+        stopped = 0;
     }
 
     return 1;
@@ -125,9 +120,10 @@ int strace_attach_pid(int pid)
     CHECK(read(strace_pipe[0], buf, sizeof(buf)-1) > 0);
     strace_output(buf);
 
-    if(arg_opt_s)
+    if(arg_opt_s && stopped)
     {
         CHECK(kill(pid, SIGCONT) != -1);
+        stopped = 0;
     }
 
     return 1;

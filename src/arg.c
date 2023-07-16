@@ -3,8 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "config.h"
-#include "log.h"
+#include "debug-server.h"
 
 int arg_opt_e = 0;
 int arg_opt_p = 0;

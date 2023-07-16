@@ -5,10 +5,7 @@
 #include <signal.h>
 #include <sys/signalfd.h>
 #include <sys/wait.h>
-#include "handler.h"
-#include "fd.h"
-#include "pid.h"
-#include "log.h"
+#include "debug-server.h"
 
 char *sig_name[] = {
     "0",

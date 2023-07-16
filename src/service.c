@@ -8,25 +8,66 @@
 #include <sys/personality.h>
 #include <sys/ptrace.h>
 #include <sys/wait.h>
-#include "handler.h"
-#include "log.h"
-#include "fd.h"
-#include "pid.h"
-#include "arg.h"
-#include "execve-tools.h"
+#include "debug-server.h"
+
+int stopped = 0;
+
+int close_fd()
+{
+    if(epoll_fd != -1)
+    {
+        CHECK(close(epoll_fd) != -1);
+    }
+    if(command_socket != -1)
+    {
+        CHECK(close(command_socket) != -1);
+    }
+    if(service_socket != -1)
+    {
+        CHECK(close(service_socket) != -1);
+    }
+    if(signal_fd != -1)
+    {
+        CHECK(close(signal_fd) != -1);
+    }
+    if(gdbserver_pipe[0] != -1)
+    {
+        CHECK(close(gdbserver_pipe[0]) != -1);
+    }
+    if(gdbserver_pipe[1] != -1)
+    {
+        CHECK(close(gdbserver_pipe[1]) != -1);
+    }
+    if(strace_pipe[0] != -1)
+    {
+        CHECK(close(strace_pipe[0]) != -1);
+    }
+    if(strace_pipe[1] != -1)
+    {
+        CHECK(close(strace_pipe[1]) != -1);
+    }
+
+    return 0;
+}
 
 int ptrace_for_stopping_at_entry_point(pid_t pid)
 {
     struct signalfd_siginfo fdsi;
     int result;
     int wstatus;
+    pid_t tmp_pid;
 
     CHECK(ptrace(PTRACE_ATTACH, pid, NULL, 0, 0, 0) != -1);
 
-    CHECK((result = read(signal_fd, &fdsi, sizeof(struct signalfd_siginfo))) != -1);
-    CHECK(fdsi.ssi_signo == SIGCHLD);
-    CHECK(fdsi.ssi_pid == pid);
-    CHECK(waitpid(pid, &wstatus, WNOHANG) == pid);
+    for(tmp_pid = -1; tmp_pid != pid;)
+    {
+        if(tmp_pid == -1)
+        {
+            CHECK((result = read(signal_fd, &fdsi, sizeof(struct signalfd_siginfo))) != -1);
+            CHECK(fdsi.ssi_signo == SIGCHLD);
+        }
+        tmp_pid = waitpid(pid, &wstatus, 0);
+    }
     CHECK((wstatus >> 16) == 0);
     debug_printf("Tracee(%d) is ready.\n", pid);
 
@@ -35,7 +76,7 @@ int ptrace_for_stopping_at_entry_point(pid_t pid)
     CHECK((result = read(signal_fd, &fdsi, sizeof(struct signalfd_siginfo))) != -1);
     CHECK(fdsi.ssi_signo == SIGCHLD);
     CHECK(fdsi.ssi_pid == pid);
-    CHECK(waitpid(pid, &wstatus, WNOHANG) == pid);
+    CHECK(waitpid(pid, &wstatus, 0) == pid);
     CHECK((wstatus >> 16) == 0);
     debug_printf("Continue %d.\n", pid);
 
@@ -43,7 +84,7 @@ int ptrace_for_stopping_at_entry_point(pid_t pid)
     CHECK((result = read(signal_fd, &fdsi, sizeof(struct signalfd_siginfo))) != -1);
     CHECK(fdsi.ssi_signo == SIGCHLD);
     CHECK(fdsi.ssi_pid == pid);
-    CHECK(waitpid(pid, &wstatus, WNOHANG) == pid);
+    CHECK(waitpid(pid, &wstatus, 0) == pid);
     CHECK(WIFSTOPPED(wstatus));
     CHECK(WSTOPSIG(wstatus) == SIGTRAP);
     CHECK((wstatus >> 16) == PTRACE_EVENT_EXEC);
@@ -54,7 +95,6 @@ int ptrace_for_stopping_at_entry_point(pid_t pid)
     CHECK((result = read(signal_fd, &fdsi, sizeof(struct signalfd_siginfo))) != -1);
     CHECK(fdsi.ssi_signo == SIGCHLD);
     CHECK(fdsi.ssi_pid == pid);
-    CHECK(waitpid(pid, &wstatus, WNOHANG) == 0);
 
     return 0;
 }
@@ -64,8 +104,22 @@ int start_service(int client_sock)
 
     if(!arg_opt_m && service_pid != -1)
     {
+        if(gdbserver_pid != -1)
+        {
+            kill(gdbserver_pid, SIGTERM);
+            CHECK(waitpid(gdbserver_pid, NULL, 0) == gdbserver_pid);
+            gdbserver_pid = -1;
+        }
+        if(strace_pid != -1)
+        {
+            kill(strace_pid, SIGTERM);
+            CHECK(waitpid(strace_pid, NULL, 0) == strace_pid);
+            strace_pid = -1;
+        }
+
         kill(service_pid, SIGKILL);
         CHECK(waitpid(service_pid, NULL, 0) == service_pid);
+        service_pid = -1;
     }
     
     service_pid = fork();
@@ -115,6 +169,7 @@ int start_service(int client_sock)
         if(arg_opt_s)
         {
             ptrace_for_stopping_at_entry_point(service_pid);
+            stopped = 1;
         }
 
         info_printf("Service start, pid=%d\n", service_pid);

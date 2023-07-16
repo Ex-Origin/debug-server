@@ -1,12 +1,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/epoll.h>
-#include "config.h"
-#include "log.h"
-#include "arg.h"
-#include "init.h"
-#include "fd.h"
-#include "handler.h"
+#include "debug-server.h"
 
 int main(int argc, char *argv[])
 {

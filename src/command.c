@@ -3,13 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include "handler.h"
-#include "config.h"
-#include "pid.h"
-#include "fd.h"
-#include "arg.h"
-#include "log.h"
-#include "tracer.h"
+#include "debug-server.h"
 
 int popen_to_int(char *cmd)
 {

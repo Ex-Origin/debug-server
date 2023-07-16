@@ -3,9 +3,7 @@
 #include <time.h>
 #include <stdarg.h>
 #include <unistd.h>
-#include "config.h"
-#include "log.h"
-#include "arg.h"
+#include "debug-server.h"
 
 int tty = 0;
 
@@ -177,4 +175,22 @@ int strace_output(char *msg)
     {
         return fprintf(stdout, "%s", msg);
     }
+}
+
+int gdbserver_pipe_handler()
+{
+    char buf[0x100];
+    memset(buf, 0, sizeof(buf));
+    CHECK(read(gdbserver_pipe[0], buf, sizeof(buf)-1) != -1);
+    gdbserver_output(buf);
+    return 1;
+}
+
+int strace_pipe_handler()
+{
+    char buf[0x100];
+    memset(buf, 0, sizeof(buf));
+    CHECK(read(strace_pipe[0], buf, sizeof(buf)-1) != -1);
+    strace_output(buf);
+    return 1;
 }
