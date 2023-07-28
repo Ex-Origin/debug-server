@@ -87,6 +87,7 @@ int command_handler()
     char clientIP[INET6_ADDRSTRLEN], ip_buf[0x100];
     int clientPort;
     int pid;
+    int gdb_attached = 0;
 
     client_addr_size = sizeof(client_addr);
     memset(buf, 0, sizeof(buf));
@@ -124,16 +125,27 @@ int command_handler()
         {
             if(arg_opt_p)
             {
-                gdbserver_attach_pid(popen_to_int(arg_popen));
+                pid = popen_to_int(arg_popen);
+                if(pid)
+                {
+                    gdb_attached = gdbserver_attach_pid(pid);
+                }
+                else
+                {
+                    warning_printf("There is an issue with the CMD \"%s\".\n", arg_popen);
+                }
             }
             else if(service_pid != -1)
             {
-                gdbserver_attach_pid(service_pid);
+                gdb_attached = gdbserver_attach_pid(service_pid);
             }
 
-            client_addr_size = sizeof(gdb_client_address);
-            // Send the received data back to the two client
-            CHECK(sendto(command_socket, buf, recv_len, 0, (struct sockaddr *)&gdb_client_address, client_addr_size) != -1);
+            if(gdb_attached)
+            {
+                client_addr_size = sizeof(gdb_client_address);
+                // Send the received data back to the two client
+                CHECK(sendto(command_socket, buf, recv_len, 0, (struct sockaddr *)&gdb_client_address, client_addr_size) != -1);
+            }
         }
         else
         {
@@ -148,7 +160,15 @@ int command_handler()
     case COMMAND_STRACE_ATTACH:
         if(arg_opt_p)
         {
-            strace_attach_pid(popen_to_int(arg_popen));
+            pid = popen_to_int(arg_popen);
+            if(pid)
+            {
+                strace_attach_pid(pid);
+            }
+            else
+            {
+                warning_printf("There is an issue with the CMD \"%s\".\n", arg_popen);
+            }
         }
         else if(service_pid != -1)
         {

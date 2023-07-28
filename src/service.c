@@ -71,7 +71,7 @@ int ptrace_for_stopping_at_entry_point(pid_t pid)
     CHECK((wstatus >> 16) == 0);
     debug_printf("Tracee(%d) is ready.\n", pid);
 
-    CHECK(ptrace(PTRACE_SETOPTIONS, pid, NULL, PTRACE_O_TRACEEXEC, 0, 0) != -1);
+    CHECK(ptrace(PTRACE_SETOPTIONS, pid, NULL, PTRACE_O_TRACEEXEC|PTRACE_O_EXITKILL, 0, 0) != -1);
     CHECK(ptrace(PTRACE_CONT, pid, NULL, 0, 0, 0) != -1);
     CHECK((result = read(signal_fd, &fdsi, sizeof(struct signalfd_siginfo))) != -1);
     CHECK(fdsi.ssi_signo == SIGCHLD);

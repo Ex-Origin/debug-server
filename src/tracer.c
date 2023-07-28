@@ -14,8 +14,9 @@ char *strace_args[]     = {"strace", "-f", "-p", /* Reserved parameter */ NULL, 
 int gdbserver_attach_pid(int pid)
 {
     char arg1[0x100], arg2[0x100];
-    char buf[0x100];
+    char buf[0x200];
     int run = 0;
+    int result = 0;
     
     memset(arg1, 0, sizeof(arg1));
     memset(arg2, 0, sizeof(arg2));
@@ -62,7 +63,21 @@ int gdbserver_attach_pid(int pid)
     {
         memset(buf, 0, sizeof(buf));
         CHECK(read(gdbserver_pipe[0], buf, sizeof(buf)-1) >= 0);
-        run = strstr(buf, "Listening on port") == NULL && strstr(buf, "Exiting") == NULL;
+        if(strstr(buf, "Listening on port"))
+        {
+            result = 1;
+            run = 0;
+        }
+        else if(strstr(buf, "Exiting"))
+        {
+            result = 0;
+            run = 0;
+        }
+        else if(strstr(buf, "info or a printed manual"))
+        {
+            result = 0;
+            run = 0;
+        }
         gdbserver_output(buf);
     }
 
@@ -72,7 +87,7 @@ int gdbserver_attach_pid(int pid)
         stopped = 0;
     }
 
-    return 1;
+    return result;
 }
 
 int strace_attach_pid(int pid)

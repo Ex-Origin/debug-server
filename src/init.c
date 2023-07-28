@@ -74,7 +74,6 @@ int set_sig_handler()
 
     sigemptyset(&new_mask);
     sigaddset(&new_mask, SIGINT);
-    sigaddset(&new_mask, SIGQUIT);
     sigaddset(&new_mask, SIGCHLD);
 
     CHECK(sigprocmask(SIG_BLOCK, &new_mask, &old_mask) != -1);
