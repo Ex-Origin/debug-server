@@ -20,17 +20,18 @@ apt install -y gdbserver strace
 2. Run `gdbinit.py` in your intended workspace to initial environment.
 3. Run `debug-server`
 
-    ```
-    Usage: debug-server [-hmsvn] [-e CMD] [-p CMD]
+    ```shell
+    Usage: debug-server [-hmsvn] [-e CMD] [-p PID] [-o CMD]
 
     General:
-    -e CMD   service argv
-    -p CMD   get pid by popen
-    -h       print help message
-    -m       enable multi-service
-    -s       halt at entry point
-    -v       show debug information
-    -n       disable address space randomization
+      -e CMD   service argv
+      -p PID   attach to PID
+      -o CMD   get pid by popen
+      -h       print help message
+      -m       enable multi-service
+      -s       halt at entry point
+      -v       show debug information
+      -n       disable address space randomization
     ```
 
 4. Use `gdbpwn.py` to connect to the target IP.
