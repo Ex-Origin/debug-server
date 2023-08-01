@@ -7,6 +7,7 @@
 
 int arg_opt_e = 0;
 int arg_opt_p = 0;
+int arg_opt_o = 0;
 int arg_opt_m = 0;
 int arg_opt_s = 0;
 int arg_opt_v = 0;
@@ -14,6 +15,7 @@ int arg_opt_n = 0;
 
 char **arg_execve_argv = NULL;
 char *arg_popen = NULL;
+int arg_pid = -1;
 
 char **parsing_execve_str(char *cmd)
 {
@@ -48,12 +50,13 @@ char **parsing_execve_str(char *cmd)
 
 int help()
 {
-    fprintf(stderr, "Usage: debug-server [-hmsvn] [-e CMD] [-p CMD]\n"
+    fprintf(stderr, "Usage: debug-server [-hmsvn] [-e CMD] [-p PID] [-o CMD]\n"
                     "\n"
                     "debug-server " VERSION "\n"
                     "General:\n"
                     "  -e CMD   service argv\n"
-                    "  -p CMD   get pid by popen\n"
+                    "  -p PID   attach to PID\n"
+                    "  -o CMD   get pid by popen\n"
                     "  -h       print help message\n"
                     "  -m       enable multi-service\n"
                     "  -s       halt at entry point\n"
@@ -66,7 +69,7 @@ int help()
 int parsing_argv(int argc, char *argv[])
 {
     int opt;
-    while ((opt = getopt(argc, argv, "e:p:hmsvn")) != -1) {
+    while ((opt = getopt(argc, argv, "e:p:o:hmsvn")) != -1) {
         switch (opt) {
         case 'e':
             arg_opt_e = 1;
@@ -74,6 +77,9 @@ int parsing_argv(int argc, char *argv[])
             break;
         case 'p':
             arg_opt_p = 1;
+            arg_pid = atoi(optarg);
+        case 'o':
+            arg_opt_o = 1;
             arg_popen = optarg;
             break;
         case 'h':
@@ -96,9 +102,9 @@ int parsing_argv(int argc, char *argv[])
             break;
         }
     }
-    if(!(arg_opt_e || arg_opt_p))
+    if(!(arg_opt_e || arg_opt_p || arg_opt_o))
     {
-        fprintf(stderr, "debug-server: must have -e CMD or -p CMD\n");
+        fprintf(stderr, "debug-server: must have -e CMD or -p PID or -o CMD\n");
         help();
     }
     return 0;

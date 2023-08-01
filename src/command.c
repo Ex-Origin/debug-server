@@ -125,6 +125,18 @@ int command_handler()
         {
             if(arg_opt_p)
             {
+                pid = arg_pid;
+                if(pid)
+                {
+                    gdb_attached = gdbserver_attach_pid(pid);
+                }
+                else
+                {
+                    warning_printf("There is an issue with the PID \"%s\".\n", arg_popen);
+                }
+            }
+            else if(arg_opt_o)
+            {
                 pid = popen_to_int(arg_popen);
                 if(pid)
                 {
@@ -159,6 +171,18 @@ int command_handler()
         break;
     case COMMAND_STRACE_ATTACH:
         if(arg_opt_p)
+        {
+            pid = arg_pid;
+            if(pid)
+            {
+                strace_attach_pid(pid);
+            }
+            else
+            {
+                warning_printf("There is an issue with the PID \"%s\".\n", arg_popen);
+            }
+        }
+        if(arg_opt_o)
         {
             pid = popen_to_int(arg_popen);
             if(pid)

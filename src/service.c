@@ -133,7 +133,10 @@ int start_service(int client_sock)
 
         CHECK(prctl(PR_SET_PDEATHSIG, SIGKILL, 0, 0, 0) != -1);
 
-        CHECK(prctl(PR_SET_PTRACER, PR_SET_PTRACER_ANY) != -1);
+        if(prctl(PR_SET_PTRACER, PR_SET_PTRACER_ANY) == -1)
+        {
+            warning_printf("prctl(PR_SET_PTRACER, PR_SET_PTRACER_ANY) failed\n");
+        }
 
         if(client_sock > 0)
         {

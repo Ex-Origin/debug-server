@@ -5,7 +5,7 @@
 #define COMMAND_PORT    9545
 #define GDBSERVER_PORT  9549
 
-#define VERSION         "1.2.2"
+#define VERSION         "1.3.0"
 
 #define COMMAND_GDB_REGISTER        0x01
 #define COMMAND_GDBSERVER_ATTACH    0x02
@@ -48,6 +48,7 @@ int strace_output(char *msg);
 
 extern int arg_opt_e;
 extern int arg_opt_p;
+extern int arg_opt_o;
 extern int arg_opt_m;
 // halt at entry point
 extern int arg_opt_s;
@@ -55,6 +56,7 @@ extern int arg_opt_v;
 extern int arg_opt_n;
 extern char **arg_execve_argv;
 extern char *arg_popen;
+extern int arg_pid;
 
 int parsing_argv(int argc, char *argv[]);
 
