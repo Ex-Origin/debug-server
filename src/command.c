@@ -151,6 +151,10 @@ int command_handler()
             {
                 gdb_attached = gdbserver_attach_pid(service_pid);
             }
+            else
+            {
+                warning_printf("There are no PIDs available for tracing!\n");
+            }
 
             if(gdb_attached)
             {
@@ -197,6 +201,10 @@ int command_handler()
         else if(service_pid != -1)
         {
             strace_attach_pid(service_pid);
+        }
+        else
+        {
+            warning_printf("There are no PIDs available for tracing!\n");
         }
 
         client_addr_size = sizeof(client_addr);
