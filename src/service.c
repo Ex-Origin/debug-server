@@ -8,6 +8,7 @@
 #include <sys/personality.h>
 #include <sys/ptrace.h>
 #include <sys/wait.h>
+#include <sys/resource.h>
 #include "debug-server.h"
 
 int stopped = 0;
@@ -101,6 +102,7 @@ int ptrace_for_stopping_at_entry_point(pid_t pid)
 
 int start_service(int client_sock)
 {
+    struct rlimit limit;
 
     if(!arg_opt_m && service_pid != -1)
     {
@@ -129,6 +131,10 @@ int start_service(int client_sock)
     }
     else if(service_pid == 0)
     {
+        limit.rlim_cur = 0x100000000;
+        limit.rlim_max = 0x100000000;
+        CHECK(setrlimit(RLIMIT_AS, &limit) != -1);
+
         CHECK(sigprocmask(SIG_SETMASK, &old_mask, NULL) != -1);
 
         CHECK(prctl(PR_SET_PDEATHSIG, SIGKILL, 0, 0, 0) != -1);
