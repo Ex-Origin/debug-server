@@ -12,6 +12,7 @@ int arg_opt_m = 0;
 int arg_opt_s = 0;
 int arg_opt_v = 0;
 int arg_opt_n = 0;
+int arg_opt_u = 0;
 
 char **arg_execve_argv = NULL;
 char *arg_popen = NULL;
@@ -62,6 +63,7 @@ int help()
                     "  -s       halt at entry point\n"
                     "  -v       show debug information\n"
                     "  -n       disable address space randomization\n"
+                    "  -u       do not limit memory\n"
     );
     exit(EXIT_FAILURE);
 }
@@ -69,7 +71,7 @@ int help()
 int parsing_argv(int argc, char *argv[])
 {
     int opt;
-    while ((opt = getopt(argc, argv, "e:p:o:hmsvn")) != -1) {
+    while ((opt = getopt(argc, argv, "e:p:o:hmsvnu")) != -1) {
         switch (opt) {
         case 'e':
             arg_opt_e = 1;
@@ -96,6 +98,9 @@ int parsing_argv(int argc, char *argv[])
             break;
         case 'n':
             arg_opt_n = 1;
+            break;
+        case 'u':
+            arg_opt_u = 1;
             break;
         default: /* '?' */
             help();

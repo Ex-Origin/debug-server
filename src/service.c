@@ -131,9 +131,12 @@ int start_service(int client_sock)
     }
     else if(service_pid == 0)
     {
-        limit.rlim_cur = 0x100000000;
-        limit.rlim_max = 0x100000000;
-        CHECK(setrlimit(RLIMIT_AS, &limit) != -1);
+        if(arg_opt_u == 0)
+        {
+            limit.rlim_cur = 0x100000000;
+            limit.rlim_max = 0x100000000;
+            CHECK(setrlimit(RLIMIT_AS, &limit) != -1);
+        }
 
         CHECK(sigprocmask(SIG_SETMASK, &old_mask, NULL) != -1);
 

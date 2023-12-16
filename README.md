@@ -32,6 +32,7 @@ apt install -y gdbserver strace
       -s       halt at entry point
       -v       show debug information
       -n       disable address space randomization
+      -u       do not limit memory
     ```
 
 4. Use `gdbpwn.py` to connect to the target IP.

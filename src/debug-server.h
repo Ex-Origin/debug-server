@@ -5,7 +5,7 @@
 #define COMMAND_PORT    9545
 #define GDBSERVER_PORT  9549
 
-#define VERSION         "1.3.1"
+#define VERSION         "1.3.2"
 
 #define COMMAND_GDB_REGISTER        0x01
 #define COMMAND_GDBSERVER_ATTACH    0x02
@@ -54,6 +54,7 @@ extern int arg_opt_m;
 extern int arg_opt_s;
 extern int arg_opt_v;
 extern int arg_opt_n;
+extern int arg_opt_u;
 extern char **arg_execve_argv;
 extern char *arg_popen;
 extern int arg_pid;
