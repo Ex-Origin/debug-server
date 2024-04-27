@@ -73,6 +73,10 @@ size_t get_address(int pid, char *search)
         }
         close(fd);
     }
+    else
+    {
+        warning_printf("%s open failed.\n", buf);
+    }
     return result;
 }
 
@@ -106,8 +110,6 @@ int command_handler()
     }
     clientPort = ntohs(client_addr.sin6_port);
 
-    debug_printf("Receive %s:%d from command_sock\n", ip_buf, clientPort);
-
     command = buf[0];
     switch(command)
     {
@@ -121,6 +123,7 @@ int command_handler()
 
         break;
     case COMMAND_GDBSERVER_ATTACH:
+        debug_printf("Receive %s:%d from command_sock to COMMAND_GDBSERVER_ATTACH\n", ip_buf, clientPort);
         if(gdb_client_address.sin6_family)
         {
             if(arg_opt_p)
@@ -174,6 +177,7 @@ int command_handler()
         
         break;
     case COMMAND_STRACE_ATTACH:
+        debug_printf("Receive %s:%d from command_sock to COMMAND_STRACE_ATTACH\n", ip_buf, clientPort);
         if(arg_opt_p)
         {
             pid = arg_pid;
@@ -212,8 +216,9 @@ int command_handler()
         
         break;
     case COMMAND_GET_ADDRESS:
+        debug_printf("Receive %s:%d from command_sock to COMMAND_GET_ADDRESS\n", ip_buf, clientPort);
         addr = 0;
-        if(arg_opt_p)
+        if(arg_opt_o)
         {
             addr = get_address(popen_to_int(arg_popen), buf + 2);
         }
@@ -235,6 +240,7 @@ int command_handler()
         warning_printf("Receive COMMAND_GDB_LOGOUT from %s:%d\n", ip_buf, clientPort);
         break;
     case COMMAND_RUN_SERVICE:
+        debug_printf("Receive %s:%d from command_sock to COMMAND_RUN_SERVICE\n", ip_buf, clientPort);
         start_service(0);
 
         client_addr_size = sizeof(client_addr);
