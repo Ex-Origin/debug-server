@@ -45,7 +45,7 @@ apt install -y gdb-multiarch
 4. Use `gdbpwn.py` to connect to the target IP.
 5. Use `exp.py` to connect to the target IP to start the target and send `attach instruction`.
 
-<video controls src="https://blog.eonew.cn/2024/05/19/Introduction-to-the-debug-server-Automated-Debugging-Tool/debug-server-demo.mp4" title="debug-server-demo" width="100%"></video>
+https://github.com/Ex-Origin/debug-server/assets/32574109/af389470-8e71-4432-b6ce-edff9ea65e34
 
 ## Features
 
