@@ -7,11 +7,18 @@ A customized debug tool designing to automatic attach the target process in eith
 
 ## Requirements
 
-Please install the following package.
+Please install the following package in remote environment.
 
 ```shell
 apt update
 apt install -y gdbserver strace
+```
+
+Please install the following package in local environment.
+
+```shell
+apt update
+apt install -y gdb-multiarch
 ```
 
 ## Usage
@@ -37,6 +44,8 @@ apt install -y gdbserver strace
 
 4. Use `gdbpwn.py` to connect to the target IP.
 5. Use `exp.py` to connect to the target IP to start the target and send `attach instruction`.
+
+<video controls src="https://blog.eonew.cn/2024/05/19/Introduction-to-the-debug-server-Automated-Debugging-Tool/debug-server-demo.mp4" title="debug-server-demo" width="100%"></video>
 
 ## Features
 
