@@ -55,6 +55,7 @@ extern int arg_opt_s;
 extern int arg_opt_v;
 extern int arg_opt_n;
 extern int arg_opt_u;
+extern int arg_opt_6;
 extern char **arg_execve_argv;
 extern char *arg_popen;
 extern int arg_pid;

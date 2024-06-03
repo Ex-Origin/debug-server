@@ -20,7 +20,14 @@ int gdbserver_attach_pid(int pid)
     
     memset(arg1, 0, sizeof(arg1));
     memset(arg2, 0, sizeof(arg2));
-    snprintf(arg1, sizeof(arg1)-1, ":::%d", GDBSERVER_PORT);
+    if (arg_opt_6)
+    {
+        snprintf(arg1, sizeof(arg1)-1, ":::%d", GDBSERVER_PORT);
+    }
+    else
+    {
+        snprintf(arg1, sizeof(arg1)-1, "0.0.0.0:%d", GDBSERVER_PORT);
+    }
     snprintf(arg2, sizeof(arg2)-1, "%d", pid);
     gdbserver_args[sizeof(gdbserver_args)/sizeof(gdbserver_args[0])-3] = arg1;
     gdbserver_args[sizeof(gdbserver_args)/sizeof(gdbserver_args[0])-2] = arg2;

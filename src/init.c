@@ -25,42 +25,93 @@ sigset_t old_mask;
 
 int init_socket()
 {
-    struct sockaddr_in6 server_addr;
+    struct sockaddr_in server_addr4;
+    struct sockaddr_in6 server_addr6;
     int nOptval;
 
     // Command socket
-    CHECK((command_socket = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP)) != -1);
+    if (arg_opt_6)
+    {
+        CHECK((command_socket = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP)) != -1);
+    }
+    else
+    {
+        CHECK((command_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) != -1);
+    }
 
     // Don't wait WAIT signal.
     nOptval = 1;
     CHECK(setsockopt(command_socket, SOL_SOCKET, SO_REUSEADDR, &nOptval, sizeof(int)) != -1);
 
     // Configure server address
-    memset(&server_addr, 0, sizeof(server_addr));
-    server_addr.sin6_family = AF_INET6;
-    inet_pton(AF_INET6, "::", &server_addr.sin6_addr);
-    server_addr.sin6_port = htons(COMMAND_PORT);
+    if (arg_opt_6)
+    {
+        memset(&server_addr6, 0, sizeof(server_addr6));
+        server_addr6.sin6_family = AF_INET6;
+        inet_pton(AF_INET6, "::", &server_addr6.sin6_addr);
+        server_addr6.sin6_port = htons(COMMAND_PORT);
+    }
+    else
+    {
+        memset(&server_addr4, 0, sizeof(server_addr4));
+        server_addr4.sin_family = AF_INET;
+        inet_pton(AF_INET, "0.0.0.0", &server_addr4.sin_addr);
+        server_addr4.sin_port = htons(COMMAND_PORT);
+    }
+
 
     // Bind the socket to the server address
-    CHECK(bind(command_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) != -1);
+    if (arg_opt_6)
+    {
+        CHECK(bind(command_socket, (struct sockaddr *)&server_addr6, sizeof(server_addr6)) != -1);
+    }
+    else
+    {
+        CHECK(bind(command_socket, (struct sockaddr *)&server_addr4, sizeof(server_addr4)) != -1);
+    }
 
     if(arg_opt_e)
     {
         // Service socket
-        CHECK((service_socket = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP)) != -1);
+        if (arg_opt_6)
+        {
+            CHECK((service_socket = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP)) != -1);
+        }
+        else
+        {
+            CHECK((service_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) != -1);
+        }
 
         // Don't wait WAIT signal.
         nOptval = 1;
         CHECK(setsockopt(service_socket, SOL_SOCKET, SO_REUSEADDR, &nOptval, sizeof(int)) != -1);
 
         // Configure server address
-        memset(&server_addr, 0, sizeof(server_addr));
-        server_addr.sin6_family = AF_INET6;
-        inet_pton(AF_INET6, "::", &server_addr.sin6_addr);
-        server_addr.sin6_port = htons(SERVICE_PORT);
+        if (arg_opt_6)
+        {
+            memset(&server_addr6, 0, sizeof(server_addr6));
+            server_addr6.sin6_family = AF_INET6;
+            inet_pton(AF_INET6, "::", &server_addr6.sin6_addr);
+            server_addr6.sin6_port = htons(SERVICE_PORT);
+        }
+        else
+        {
+            memset(&server_addr4, 0, sizeof(server_addr4));
+            server_addr4.sin_family = AF_INET;
+            inet_pton(AF_INET, "0.0.0.0", &server_addr4.sin_addr);
+            server_addr4.sin_port = htons(SERVICE_PORT);
+        }
+
 
         // Bind the socket to the server address
-        CHECK(bind(service_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) != -1);
+        if (arg_opt_6)
+        {
+            CHECK(bind(service_socket, (struct sockaddr *)&server_addr6, sizeof(server_addr6)) != -1);
+        }
+        else
+        {
+            CHECK(bind(service_socket, (struct sockaddr *)&server_addr4, sizeof(server_addr4)) != -1);
+        }
 
         CHECK(listen(service_socket, 64) != -1);
     }
