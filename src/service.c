@@ -173,7 +173,28 @@ int start_service(int client_sock)
             dup2(STDIN_FILENO, STDERR_FILENO);
         }
         
-        execvp(arg_execve_argv[0], arg_execve_argv);
+        if (execvp(arg_execve_argv[0], arg_execve_argv) == -1)
+        {
+            if (errno == ENOENT)
+            {
+                if (strstr(arg_execve_argv[0], "/"))
+                {
+                    fprintf(stderr, "ERROR: \"%s\" does not exist!\n", arg_execve_argv[0], arg_execve_argv[0]);
+                }
+                else
+                {
+                    fprintf(stderr, "ERROR: \"%s\" cannot be found in PATH. Perhaps try running \"./%s\"!\n", arg_execve_argv[0], arg_execve_argv[0]);
+                }
+            }
+            else if (errno == EACCES)
+            {
+                fprintf(stderr, "ERROR: \"%s\" does not have execution privileges!\n", arg_execve_argv[0]);
+            }
+            else
+            {
+                fprintf(stderr, "ERROR: %s  %s:%d\n", strerror(errno), __FILE__, __LINE__);
+            }
+        }
         exit(EXIT_FAILURE);
     }
     else

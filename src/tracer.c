@@ -57,7 +57,21 @@ int gdbserver_attach_pid(int pid)
 
         close_fd();
 
-        CHECK(execvp(gdbserver_args[0], gdbserver_args) != -1);
+        if (execvp(gdbserver_args[0], gdbserver_args) == -1)
+        {
+            if (errno == ENOENT)
+            {
+                fprintf(stderr, "ERROR: \"%s\" cannot be found in PATH!\n", gdbserver_args[0]);
+            }
+            else if (errno == EACCES)
+            {
+                fprintf(stderr, "ERROR: \"%s\" does not have execution privileges!\n", gdbserver_args[0]);
+            }
+            else
+            {
+                fprintf(stderr, "ERROR: %s  %s:%d\n", strerror(errno), __FILE__, __LINE__);
+            }
+        }
 
         exit(EXIT_FAILURE);
     }
@@ -81,6 +95,11 @@ int gdbserver_attach_pid(int pid)
             run = 0;
         }
         else if(strstr(buf, "info or a printed manual"))
+        {
+            result = 0;
+            run = 0;
+        }
+        else if (strstr(buf, "ERROR"))
         {
             result = 0;
             run = 0;
@@ -131,7 +150,21 @@ int strace_attach_pid(int pid)
 
         close_fd();
         
-        CHECK(execvp(strace_args[0], strace_args) != -1);
+        if (execvp(strace_args[0], strace_args) == -1)
+        {
+            if (errno == ENOENT)
+            {
+                fprintf(stderr, "ERROR: \"%s\" cannot be found in PATH!\n", strace_args[0]);
+            }
+            else if (errno == EACCES)
+            {
+                fprintf(stderr, "ERROR: \"%s\" does not have execution privileges!\n", strace_args[0]);
+            }
+            else
+            {
+                fprintf(stderr, "ERROR: %s  %s:%d\n", strerror(errno), __FILE__, __LINE__);
+            }
+        }
 
         exit(EXIT_FAILURE);
     }
