@@ -75,7 +75,8 @@ extern int epoll_fd;
 extern int gdbserver_pipe[2];
 extern int strace_pipe[2];
 
-extern struct sockaddr_in6 gdb_client_address;
+extern struct sockaddr_in gdb_client_address4;
+extern struct sockaddr_in6 gdb_client_address6;
 
 int command_handler();
 int service_handler();

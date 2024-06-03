@@ -215,25 +215,57 @@ int service_handler()
 {
     int client_sock = -1;
     socklen_t client_addr_size;
-    struct sockaddr_in6 client_addr;
+    struct sockaddr_in client_addr4;
+    struct sockaddr_in6 client_addr6;
     char clientIP[INET6_ADDRSTRLEN], ip_buf[0x100];
     int clientPort;
 
-    client_addr_size = sizeof(client_addr);
-    CHECK((client_sock = accept(service_socket, (struct sockaddr *)&client_addr, &client_addr_size)) != -1);
-    // Get the client's IP address and port
-    memset(clientIP, 0, sizeof(clientIP));
-    inet_ntop(AF_INET6, &(client_addr.sin6_addr), clientIP, INET6_ADDRSTRLEN);
-    memset(ip_buf, 0, sizeof(ip_buf));
-    if (clientIP[0] == ':')
+    if (arg_opt_6)
     {
-        snprintf(ip_buf, sizeof(ip_buf)-1, "%s", clientIP + 7);
+        client_addr_size = sizeof(client_addr6);
+        CHECK((client_sock = accept(service_socket, (struct sockaddr *)&client_addr6, &client_addr_size)) != -1);
     }
     else
     {
-        snprintf(ip_buf, sizeof(ip_buf)-1, "[%s]", clientIP);
+        client_addr_size = sizeof(client_addr4);
+        CHECK((client_sock = accept(service_socket, (struct sockaddr *)&client_addr4, &client_addr_size)) != -1);
     }
-    clientPort = ntohs(client_addr.sin6_port);
+
+    // Get the client's IP address and port
+    memset(clientIP, 0, sizeof(clientIP));
+    if (arg_opt_6)
+    {
+        inet_ntop(AF_INET6, &(client_addr6.sin6_addr), clientIP, INET6_ADDRSTRLEN);
+    }
+    else
+    {
+        inet_ntop(AF_INET, &(client_addr4.sin_addr), clientIP, INET_ADDRSTRLEN);
+    }
+    memset(ip_buf, 0, sizeof(ip_buf));
+    if (arg_opt_6)
+    {
+        if (clientIP[0] == ':')
+        {
+            snprintf(ip_buf, sizeof(ip_buf)-1, "%s", clientIP + 7);
+        }
+        else
+        {
+            snprintf(ip_buf, sizeof(ip_buf)-1, "[%s]", clientIP);
+        }
+    }
+    else
+    {
+        snprintf(ip_buf, sizeof(ip_buf)-1, "%s", clientIP);
+    }
+
+    if (arg_opt_6)
+    {
+        clientPort = ntohs(client_addr6.sin6_port);
+    }
+    else
+    {
+        clientPort = ntohs(client_addr4.sin_port);
+    }
 
     debug_printf("Receive %s:%d from service_sock\n", ip_buf, clientPort);
 

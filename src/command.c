@@ -84,7 +84,8 @@ int command_handler()
 {
     char buf[0x100];
     socklen_t client_addr_size;
-    struct sockaddr_in6 client_addr;
+    struct sockaddr_in client_addr4;
+    struct sockaddr_in6 client_addr6;
     int recv_len;
     unsigned char command, path_len;
     size_t addr = 0;
@@ -93,38 +94,66 @@ int command_handler()
     int pid;
     int gdb_attached = 0;
 
-    client_addr_size = sizeof(client_addr);
-    memset(buf, 0, sizeof(buf));
-    recv_len = recvfrom(command_socket, buf, sizeof(buf)-1, 0, (struct sockaddr *)&client_addr, &client_addr_size);
-
-    memset(clientIP, 0, sizeof(clientIP));
-    inet_ntop(AF_INET6, &(client_addr.sin6_addr), clientIP, INET6_ADDRSTRLEN);
-    memset(ip_buf, 0, sizeof(ip_buf));
-    if (clientIP[0] == ':')
+    if (arg_opt_6)
     {
-        snprintf(ip_buf, sizeof(ip_buf)-1, "%s", clientIP + 7);
+        client_addr_size = sizeof(client_addr6);
+        memset(buf, 0, sizeof(buf));
+        recv_len = recvfrom(command_socket, buf, sizeof(buf)-1, 0, (struct sockaddr *)&client_addr6, &client_addr_size);
     }
     else
     {
-        snprintf(ip_buf, sizeof(ip_buf)-1, "[%s]", clientIP);
+        client_addr_size = sizeof(client_addr4);
+        memset(buf, 0, sizeof(buf));
+        recv_len = recvfrom(command_socket, buf, sizeof(buf)-1, 0, (struct sockaddr *)&client_addr4, &client_addr_size);
     }
-    clientPort = ntohs(client_addr.sin6_port);
+
+    if (arg_opt_6)
+    {
+        memset(clientIP, 0, sizeof(clientIP));
+        inet_ntop(AF_INET6, &(client_addr6.sin6_addr), clientIP, INET6_ADDRSTRLEN);
+        memset(ip_buf, 0, sizeof(ip_buf));
+        if (clientIP[0] == ':')
+        {
+            snprintf(ip_buf, sizeof(ip_buf)-1, "%s", clientIP + 7);
+        }
+        else
+        {
+            snprintf(ip_buf, sizeof(ip_buf)-1, "[%s]", clientIP);
+        }
+        clientPort = ntohs(client_addr6.sin6_port);
+    }
+    else
+    {
+        memset(clientIP, 0, sizeof(clientIP));
+        inet_ntop(AF_INET, &(client_addr4.sin_addr), clientIP, INET_ADDRSTRLEN);
+        memset(ip_buf, 0, sizeof(ip_buf));
+        snprintf(ip_buf, sizeof(ip_buf)-1, "%s", clientIP);
+        clientPort = ntohs(client_addr4.sin_port);
+    }
+
 
     command = buf[0];
     switch(command)
     {
     case COMMAND_GDB_REGISTER:
-        memcpy(&gdb_client_address, &client_addr, sizeof(gdb_client_address));
+        if (arg_opt_6)
+        {
+            memcpy(&gdb_client_address6, &client_addr6, sizeof(gdb_client_address6));
+        }
+        else
+        {
+            memcpy(&gdb_client_address4, &client_addr4, sizeof(gdb_client_address4));
+        }
         info_printf("%s gdb client registered.\n", ip_buf);
 
-        client_addr_size = sizeof(client_addr);
+        client_addr_size = sizeof(client_addr6);
         
-        CHECK(sendto(command_socket, buf, recv_len, 0, (struct sockaddr *)&client_addr, client_addr_size) != -1);
+        CHECK(sendto(command_socket, buf, recv_len, 0, (struct sockaddr *)&client_addr6, client_addr_size) != -1);
 
         break;
     case COMMAND_GDBSERVER_ATTACH:
         debug_printf("Receive %s:%d from command_sock to COMMAND_GDBSERVER_ATTACH\n", ip_buf, clientPort);
-        if(gdb_client_address.sin6_family)
+        if((arg_opt_6 && gdb_client_address6.sin6_family) || ((!arg_opt_6) && gdb_client_address4.sin_family))
         {
             if(arg_opt_p)
             {
@@ -161,9 +190,18 @@ int command_handler()
 
             if(gdb_attached)
             {
-                client_addr_size = sizeof(gdb_client_address);
-                // Send the received data back to the two client
-                CHECK(sendto(command_socket, buf, recv_len, 0, (struct sockaddr *)&gdb_client_address, client_addr_size) != -1);
+                if (arg_opt_6)
+                {
+                    client_addr_size = sizeof(gdb_client_address6);
+                    // Send the received data back to the two client
+                    CHECK(sendto(command_socket, buf, recv_len, 0, (struct sockaddr *)&gdb_client_address6, client_addr_size) != -1);
+                }
+                else
+                {
+                    client_addr_size = sizeof(gdb_client_address4);
+                    // Send the received data back to the two client
+                    CHECK(sendto(command_socket, buf, recv_len, 0, (struct sockaddr *)&gdb_client_address4, client_addr_size) != -1);
+                }
             }
         }
         else
@@ -171,9 +209,16 @@ int command_handler()
             warning_printf("There is no gdb client\n");
         }
         
-        client_addr_size = sizeof(client_addr);
-
-        CHECK(sendto(command_socket, buf, recv_len, 0, (struct sockaddr *)&client_addr, client_addr_size) != -1);
+        if (arg_opt_6)
+        {
+            client_addr_size = sizeof(client_addr6);
+            CHECK(sendto(command_socket, buf, recv_len, 0, (struct sockaddr *)&client_addr6, client_addr_size) != -1);
+        }
+        else
+        {
+            client_addr_size = sizeof(client_addr4);
+            CHECK(sendto(command_socket, buf, recv_len, 0, (struct sockaddr *)&client_addr4, client_addr_size) != -1);
+        }
         
         break;
     case COMMAND_STRACE_ATTACH:
@@ -211,8 +256,16 @@ int command_handler()
             warning_printf("There are no PIDs available for tracing!\n");
         }
 
-        client_addr_size = sizeof(client_addr);
-        CHECK(sendto(command_socket, buf, recv_len, 0, (struct sockaddr *)&client_addr, client_addr_size) != -1);
+        if (arg_opt_6)
+        {
+            client_addr_size = sizeof(client_addr6);
+            CHECK(sendto(command_socket, buf, recv_len, 0, (struct sockaddr *)&client_addr6, client_addr_size) != -1);
+        }
+        else
+        {
+            client_addr_size = sizeof(client_addr4);
+            CHECK(sendto(command_socket, buf, recv_len, 0, (struct sockaddr *)&client_addr4, client_addr_size) != -1);
+        }
         
         break;
     case COMMAND_GET_ADDRESS:
@@ -231,9 +284,18 @@ int command_handler()
         buf[0] = COMMAND_GET_ADDRESS;
         buf[1] = sizeof(addr);
         *(size_t*)&buf[2] = addr;
-        client_addr_size = sizeof(client_addr);
 
-        CHECK(sendto(command_socket, buf, 2 + sizeof(addr), 0, (struct sockaddr *)&client_addr, client_addr_size) != -1);
+        if (arg_opt_6)
+        {
+            client_addr_size = sizeof(client_addr6);
+            CHECK(sendto(command_socket, buf, 2 + sizeof(addr), 0, (struct sockaddr *)&client_addr6, client_addr_size) != -1);
+        }
+        else
+        {
+            client_addr_size = sizeof(client_addr4);
+            CHECK(sendto(command_socket, buf, 2 + sizeof(addr), 0, (struct sockaddr *)&client_addr4, client_addr_size) != -1);
+        }
+        
         
         break;
     case COMMAND_GDB_LOGOUT:
@@ -243,8 +305,16 @@ int command_handler()
         debug_printf("Receive %s:%d from command_sock to COMMAND_RUN_SERVICE\n", ip_buf, clientPort);
         start_service(0);
 
-        client_addr_size = sizeof(client_addr);
-        CHECK(sendto(command_socket, buf, recv_len, 0, (struct sockaddr *)&client_addr, client_addr_size) != -1);
+        if (arg_opt_6)
+        {
+            client_addr_size = sizeof(client_addr6);
+            CHECK(sendto(command_socket, buf, recv_len, 0, (struct sockaddr *)&client_addr6, client_addr_size) != -1);
+        }
+        else
+        {
+            client_addr_size = sizeof(client_addr4);
+            CHECK(sendto(command_socket, buf, recv_len, 0, (struct sockaddr *)&client_addr4, client_addr_size) != -1);
+        }
 
         break;
     default:
@@ -260,12 +330,25 @@ int disconnect_gdb()
     socklen_t client_addr_size;
     char buf[0x10];
 
-    if(gdb_client_address.sin6_family)
+    if (arg_opt_6)
     {
-        client_addr_size = sizeof(gdb_client_address);
-        memset(buf, 0, sizeof(buf));
-        buf[0] = COMMAND_GDB_LOGOUT;
-        CHECK(sendto(command_socket, buf, 1, 0, (struct sockaddr *)&gdb_client_address, client_addr_size) != -1);
+        if(gdb_client_address6.sin6_family)
+        {
+            client_addr_size = sizeof(gdb_client_address6);
+            memset(buf, 0, sizeof(buf));
+            buf[0] = COMMAND_GDB_LOGOUT;
+            CHECK(sendto(command_socket, buf, 1, 0, (struct sockaddr *)&gdb_client_address6, client_addr_size) != -1);
+        }
+    }
+    else
+    {
+        if(gdb_client_address4.sin_family)
+        {
+            client_addr_size = sizeof(gdb_client_address4);
+            memset(buf, 0, sizeof(buf));
+            buf[0] = COMMAND_GDB_LOGOUT;
+            CHECK(sendto(command_socket, buf, 1, 0, (struct sockaddr *)&gdb_client_address4, client_addr_size) != -1);
+        }
     }
 
     return 0;

@@ -15,7 +15,8 @@ int epoll_fd            = -1;
 int gdbserver_pipe[2]   = {-1, -1};
 int strace_pipe[2]      = {-1, -1};
 
-struct sockaddr_in6 gdb_client_address = {0};
+struct sockaddr_in gdb_client_address4 = {0};
+struct sockaddr_in6 gdb_client_address6 = {0};
 
 int service_pid     = -1;
 int gdbserver_pid   = -1;
