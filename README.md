@@ -40,6 +40,7 @@ apt install -y gdb-multiarch
       -v       show debug information
       -n       disable address space randomization
       -u       do not limit memory
+      -6       ipv6 mode
     ```
 
 4. Use `gdbpwn.py` to connect to the target IP.
