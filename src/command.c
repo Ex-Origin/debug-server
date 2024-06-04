@@ -146,9 +146,16 @@ int command_handler()
         }
         info_printf("%s gdb client registered.\n", ip_buf);
 
-        client_addr_size = sizeof(client_addr6);
-        
-        CHECK(sendto(command_socket, buf, recv_len, 0, (struct sockaddr *)&client_addr6, client_addr_size) != -1);
+        if (arg_opt_6)
+        {
+            client_addr_size = sizeof(client_addr6);
+            CHECK(sendto(command_socket, buf, recv_len, 0, (struct sockaddr *)&client_addr6, client_addr_size) != -1);
+        }
+        else
+        {
+            client_addr_size = sizeof(client_addr4);
+            CHECK(sendto(command_socket, buf, recv_len, 0, (struct sockaddr *)&client_addr4, client_addr_size) != -1);
+        }
 
         break;
     case COMMAND_GDBSERVER_ATTACH:
