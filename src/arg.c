@@ -21,31 +21,52 @@ int arg_pid = -1;
 
 char **parsing_execve_str(char *cmd)
 {
-    char *ptr = NULL, **tmp, **argv = NULL;
+    char *ptr = cmd, **tmp, **argv = NULL;
     int argc = 0, max;
+    int in_single_quote = 0, in_double_quote = 0;
     
     max = 16;
     CHECK((argv = calloc(max, sizeof(char *))) != NULL);
 
-    ptr = strtok(cmd, " ");
-    while(1)
+    while (*ptr != '\0')
     {
-        if(ptr == NULL || *ptr)
+        char *arg_start = ptr;
+        char *arg = malloc(strlen(ptr) + 1);  // Temporary buffer to hold the parsed argument
+        CHECK(arg != NULL);
+        int arg_len = 0;
+
+        while (*ptr != '\0')
         {
-            if(argc + 1 > max)
-            {
-                CHECK((tmp = realloc(argv, (max * 2) * sizeof(char *))) != NULL);
-                argv = tmp;
-                max = max * 2;
+            if (*ptr == '"' && !in_single_quote) {
+                in_double_quote = !in_double_quote;
+            } else if (*ptr == '\'' && !in_double_quote) {
+                in_single_quote = !in_single_quote;
+            } else if (*ptr == ' ' && !in_single_quote && !in_double_quote) {
+                ptr ++;
+                break;  // Space outside quotes means end of argument
+            } else {
+                arg[arg_len++] = *ptr;  // Add the character to the argument
             }
-            argv[argc++] = ptr;
+            ptr ++;
         }
-        if(ptr == NULL)
+        
+        arg[arg_len] = '\0';  // Null-terminate the argument
+
+        if (argc + 1 > max)
         {
-            break;
+            CHECK((tmp = realloc(argv, (max * 2) * sizeof(char *))) != NULL);
+            argv = tmp;
+            max = max * 2;
         }
-        ptr = strtok(NULL, " ");
+        argv[argc++] = arg;
     }
+
+    if (in_single_quote || in_double_quote) {
+        fprintf(stderr, "Error: Unmatched quote in input string\n");
+        exit(EXIT_FAILURE);
+    }
+
+    argv[argc] = NULL;  // Null-terminate the argument list
 
     return argv;
 }
