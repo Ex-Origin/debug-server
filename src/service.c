@@ -106,24 +106,25 @@ int start_service(int client_sock)
 
     if(!arg_opt_m && service_pid != -1)
     {
-        if(gdbserver_pid != -1)
-        {
-            kill(gdbserver_pid, SIGTERM);
-            CHECK(waitpid(gdbserver_pid, NULL, 0) == gdbserver_pid);
-            gdbserver_pid = -1;
-        }
-        if(strace_pid != -1)
-        {
-            kill(strace_pid, SIGTERM);
-            CHECK(waitpid(strace_pid, NULL, 0) == strace_pid);
-            strace_pid = -1;
-        }
-
         kill(service_pid, SIGKILL);
         CHECK(waitpid(service_pid, NULL, 0) == service_pid);
         service_pid = -1;
     }
-    
+
+    if(gdbserver_pid != -1)
+    {
+        kill(gdbserver_pid, SIGTERM);
+        CHECK(waitpid(gdbserver_pid, NULL, 0) == gdbserver_pid);
+        gdbserver_pid = -1;
+    }
+
+    if(strace_pid != -1)
+    {
+        kill(strace_pid, SIGTERM);
+        CHECK(waitpid(strace_pid, NULL, 0) == strace_pid);
+        strace_pid = -1;
+    }
+
     service_pid = fork();
     if(service_pid == -1)
     {
@@ -179,7 +180,7 @@ int start_service(int client_sock)
             {
                 if (strstr(arg_execve_argv[0], "/"))
                 {
-                    fprintf(stderr, "ERROR: \"%s\" does not exist!\n", arg_execve_argv[0], arg_execve_argv[0]);
+                    fprintf(stderr, "ERROR: \"%s\" does not exist!\n", arg_execve_argv[0]);
                 }
                 else
                 {

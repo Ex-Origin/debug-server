@@ -5,7 +5,7 @@
 #define COMMAND_PORT    9545
 #define GDBSERVER_PORT  9549
 
-#define VERSION         "1.5.0"
+#define VERSION         "1.5.1"
 
 #define COMMAND_GDB_REGISTER        0x01
 #define COMMAND_GDBSERVER_ATTACH    0x02
