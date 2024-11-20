@@ -104,13 +104,6 @@ int start_service(int client_sock)
 {
     struct rlimit limit;
 
-    if(!arg_opt_m && service_pid != -1)
-    {
-        kill(service_pid, SIGKILL);
-        CHECK(waitpid(service_pid, NULL, 0) == service_pid);
-        service_pid = -1;
-    }
-
     if(gdbserver_pid != -1)
     {
         kill(gdbserver_pid, SIGTERM);
@@ -123,6 +116,13 @@ int start_service(int client_sock)
         kill(strace_pid, SIGTERM);
         CHECK(waitpid(strace_pid, NULL, 0) == strace_pid);
         strace_pid = -1;
+    }
+
+    if(!arg_opt_m && service_pid != -1)
+    {
+        kill(service_pid, SIGKILL);
+        CHECK(waitpid(service_pid, NULL, 0) == service_pid);
+        service_pid = -1;
     }
 
     service_pid = fork();
